@@ -1,94 +1,119 @@
-// Nombre y versión de la base de datos
-const nombreBD = "CalculosNotasDB";
-const versionBD = 1;
+/**
+ * db.js — Módulo de base de datos (IndexedDB)
+ *
+ * Base: CalculosNotasDB (versión 1)
+ *  - usuarios: keyPath "documento"           -> { documento, fechaRegistro }
+ *  - calculos: keyPath "id" (autoincremento) -> { id, documento, fecha, notaDefinitiva, estado, notas[] }
+ *               índice "documento" (no único) para consultar el historial de cada estudiante.
+ */
+const NOMBRE_BD = "CalculosNotasDB";
+const VERSION_BD = 1;
 
-// Función para conectar con IndexedDB
+let conexion = null; // La conexión se abre una sola vez y se reutiliza
+
+export function soportaIndexedDB() {
+    return typeof indexedDB !== "undefined" && indexedDB !== null;
+}
+
+/** Abre (o reutiliza) la conexión con IndexedDB. */
 export function abrirBD() {
-    return new Promise((resolve, reject) => {
+    if (conexion) return conexion;
 
-        const solicitud = indexedDB.open(nombreBD, versionBD);
+    conexion = new Promise((resolve, reject) => {
+        if (!soportaIndexedDB()) {
+            reject(new Error("Este navegador no soporta IndexedDB"));
+            return;
+        }
+
+        const solicitud = indexedDB.open(NOMBRE_BD, VERSION_BD);
 
         solicitud.onupgradeneeded = function (evento) {
-
             const db = evento.target.result;
 
-            // Crear almacén de usuarios
             if (!db.objectStoreNames.contains("usuarios")) {
-                db.createObjectStore("usuarios", {
-                    keyPath: "documento"
-                });
+                db.createObjectStore("usuarios", { keyPath: "documento" });
             }
 
-            // Crear almacén de cálculos
             if (!db.objectStoreNames.contains("calculos")) {
-
                 const calculos = db.createObjectStore("calculos", {
                     keyPath: "id",
                     autoIncrement: true
                 });
-
-                calculos.createIndex("documento", "documento", {
-                    unique: false
-                });
+                calculos.createIndex("documento", "documento", { unique: false });
             }
         };
 
-        // Conexión exitosa
-        solicitud.onsuccess = function (evento) {
-            console.log("Base de datos conectada correctamente");
-            resolve(evento.target.result);
+        solicitud.onsuccess = function () {
+            const db = solicitud.result;
+            // Si otra pestaña actualiza la BD, se cierra para no bloquearla
+            db.onversionchange = function () {
+                db.close();
+                conexion = null;
+            };
+            resolve(db);
         };
 
-        // Error de conexión
         solicitud.onerror = function () {
-            console.error("Error al conectar la base de datos");
             reject(solicitud.error);
         };
-    });
-}// Buscar un estudiante por su documento
-export async function buscarUsuario(documento) {
 
+        solicitud.onblocked = function () {
+            reject(new Error("La base de datos está bloqueada por otra pestaña abierta"));
+        };
+    });
+
+    // Si falla, la próxima llamada vuelve a intentar abrir la BD
+    conexion.catch(() => { conexion = null; });
+    return conexion;
+}
+
+/**
+ * Ejecuta una operación sobre un almacén y devuelve su resultado cuando
+ * la transacción termina con éxito. Rechaza si la transacción se aborta.
+ */
+async function ejecutar(almacen, modo, operacion) {
     const db = await abrirBD();
 
     return new Promise((resolve, reject) => {
+        const transaccion = db.transaction(almacen, modo);
+        const solicitud = operacion(transaccion.objectStore(almacen));
+        let resultado;
 
-        const transaccion = db.transaction("usuarios", "readonly");
-        const almacen = transaccion.objectStore("usuarios");
-        const solicitud = almacen.get(documento);
-
-        solicitud.onsuccess = function () {
-            resolve(solicitud.result);
-        };
-
-        solicitud.onerror = function () {
-            reject(solicitud.error);
-        };
+        solicitud.onsuccess = () => { resultado = solicitud.result; };
+        transaccion.oncomplete = () => resolve(resultado);
+        transaccion.onabort = () => reject(transaccion.error || solicitud.error);
     });
 }
 
-// Registrar un estudiante nuevo
+/** Busca un estudiante por documento. Devuelve el usuario o undefined. */
+export function buscarUsuario(documento) {
+    return ejecutar("usuarios", "readonly", (almacen) => almacen.get(documento));
+}
+
+/** Registra un estudiante nuevo. Rechaza si el documento ya existe. */
 export async function registrarUsuario(documento) {
+    const usuario = { documento, fechaRegistro: new Date().toISOString() };
+    await ejecutar("usuarios", "readwrite", (almacen) => almacen.add(usuario));
+    return usuario;
+}
 
-    const db = await abrirBD();
+/** Guarda un cálculo. Devuelve el registro guardado (con su id). */
+export async function guardarCalculo({ documento, notaDefinitiva, estado, notas }) {
+    const registro = {
+        documento,
+        fecha: new Date().toISOString(),
+        notaDefinitiva,
+        estado,
+        notas
+    };
+    const id = await ejecutar("calculos", "readwrite", (almacen) => almacen.add(registro));
+    return { ...registro, id };
+}
 
-    return new Promise((resolve, reject) => {
-
-        const transaccion = db.transaction("usuarios", "readwrite");
-        const almacen = transaccion.objectStore("usuarios");
-
-        const usuario = {
-            documento: documento,
-            fechaRegistro: new Date().toISOString()
-        };
-
-        almacen.add(usuario);
-
-        transaccion.oncomplete = function () {
-            resolve(usuario);
-        };
-
-        transaccion.onabort = function () {
-            reject(transaccion.error);
-        };
-    });
+/** Devuelve los cálculos de un estudiante, del más reciente al más antiguo. */
+export async function obtenerHistorial(documento) {
+    const calculos = await ejecutar("calculos", "readonly", (almacen) =>
+        almacen.index("documento").getAll(documento)
+    );
+    return calculos.sort((a, b) => b.id - a.id);
 }

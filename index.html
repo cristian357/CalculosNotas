@@ -4,69 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Notas</title>
-    <link rel="stylesheet" href="estilo.css">
+    <link rel="stylesheet" href="css/estilo.css">
 </head>
 <body>
     <header>
         <h1>Calculadora de Notas</h1>
-        <p>Consulta tu rendimiento academico</p>
+        <p>Consulta tu rendimiento académico</p>
     </header>
 
     <main>
-        <!--Pantalla de inicio de sesion-->
-        <section id="login" class="tarjeta">
-            <h2>Inicio de sesion</h2>
+        <!-- Pantalla de inicio de sesión (las pantallas se muestran/ocultan desde js/auth.js) -->
+        <section id="login" class="tarjeta" hidden>
+            <h2>Inicio de sesión</h2>
 
-            <form id="form-login">
-                <label for="documento">Numero de documento</label>
-
-                <input type="text" id="documento" inputmode="numeric" pattern="[0-9]+" placeholder="Ingresa tu documento" required>
-
+            <form id="form-login" novalidate>
+                <label for="documento">Número de documento</label>
+                <input type="text" id="documento" inputmode="numeric" pattern="[0-9]+" placeholder="Ingresa tu documento" autocomplete="off" required>
+                <p id="mensaje-login" class="mensaje-error" role="alert"></p>
                 <button type="submit">Ingresar</button>
             </form>
         </section>
 
-        <!--Pantalla de inicio de sesion-->
-        <section id="configuracion" class="tarjeta">
-            <h2>Configuracion de notas </h2>
+        <!-- Pantalla de configuración de notas -->
+        <section id="configuracion" class="tarjeta" hidden>
+            <h2>Configuración de notas</h2>
 
             <label for="cantidad">Cantidad de notas</label>
+            <input type="number" id="cantidad" min="1" max="20" step="1" placeholder="Ejemplo: 3">
 
-            <input type="number" id="cantidad" min="1" placeholder="Ejemplo 3" required>
+            <button type="button" id="generar-campos">Generar campos</button>
 
-            <button type="button">Generar campos</button>
-
-            <form id="form-notas">
+            <form id="form-notas" novalidate>
                 <div id="contenedor-notas"></div>
 
-                <p>Total de porcentajes:
-                    <span id="total-porcentaje">0</span>%
-                </p>
+                <p>Total de porcentajes: <span id="total-porcentaje">0</span>%</p>
 
-                <p id="mensaje-error" role="alert"></p>
+                <p id="mensaje-error" class="mensaje-error" role="alert"></p>
 
                 <button type="submit" id="calcular">Calcular nota definitiva</button>
             </form>
         </section>
 
-        <!--Pantalla de resultados-->
-        <section id="resultados" class="tarjeta">
-
+        <!-- Pantalla de resultados -->
+        <section id="resultados" class="tarjeta" hidden>
             <h2>Resultado final</h2>
-
             <p>Tu nota definitiva es:</p>
-
             <h3 id="nota-definitiva">--</h3>
-
-            <p id="estado">Pendiente de calculo</p>
-
-            <button type="button" id="nuevo-calculo">
-                Nuevo calculo
-            </button>
+            <p id="estado">Pendiente de cálculo</p>
+            <button type="button" id="nuevo-calculo">Nuevo cálculo</button>
         </section>
 
         <!-- Pantalla de historial -->
-        <section id="historial" class="tarjeta">
+        <section id="historial" class="tarjeta" hidden>
             <h2>Historial de cálculos</h2>
 
             <div class="tabla-responsive">
@@ -78,22 +67,18 @@
                             <th>Estado</th>
                         </tr>
                     </thead>
-
                     <tbody id="tabla-historial"></tbody>
                 </table>
             </div>
 
-            <button type="button" id="cerrar-sesion">
-                Cerrar sesión
-            </button>
+            <button type="button" id="cerrar-sesion">Cerrar sesión</button>
         </section>
     </main>
 
     <footer>
         <p>Software de Cálculo de Notas - SENA</p>
     </footer>
-<script type="module" src="js/auth.js"></script>
 
+    <script type="module" src="js/main.js"></script>
 </body>
-
 </html>
