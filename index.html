@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Notas</title>
+    <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+    <header>
+        <h1>Calculadora de Notas</h1>
+        <p>Consulta tu rendimiento academico</p>
+    </header>
+
+    <main>
+        <!--Pantalla de inicio de sesion-->
+        <section id="login" class="tarjeta">
+            <h2>Inicio de sesion</h2>
+
+            <form id="form-login">
+                <label for="documento">Numero de documento</label>
+
+                <input type="text" id="documento" inputmode="numeric" pattern="[0-9]+" placeholder="Ingresa tu documento" required>
+
+                <button type="submit">Ingresar</button>
+            </form>
+        </section>
+
+        <!--Pantalla de inicio de sesion-->
+        <section id="configuracion" class="tarjeta">
+            <h2>Configuracion de notas </h2>
+
+            <label for="cantidad">Cantidad de notas</label>
+
+            <input type="number" id="cantidad" min="1" placeholder="Ejemplo 3" required>
+
+            <button type="button">Generar campos</button>
+
+            <form id="form-notas">
+                <div id="contenedor-notas"></div>
+
+                <p>Total de porcentajes:
+                    <span id="total-porcentaje">0</span>%
+                </p>
+
+                <p id="mensaje-error" role="alert"></p>
+
+                <button type="submit" id="calcular">Calcular nota definitiva</button>
+            </form>
+        </section>
+
+        <!--Pantalla de resultados-->
+        <section id="resultados" class="tarjeta">
+
+            <h2>Resultado final</h2>
+
+            <p>Tu nota definitiva es:</p>
+
+            <h3 id="nota-definitiva">--</h3>
+
+            <p id="estado">Pendiente de calculo</p>
+
+            <button type="button" id="nuevo-calculo">
+                Nuevo calculo
+            </button>
+        </section>
+
+        <!-- Pantalla de historial -->
+        <section id="historial" class="tarjeta">
+            <h2>Historial de cálculos</h2>
+
+            <div class="tabla-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Nota definitiva</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="tabla-historial"></tbody>
+                </table>
+            </div>
+
+            <button type="button" id="cerrar-sesion">
+                Cerrar sesión
+            </button>
+        </section>
+    </main>
+
+    <footer>
+        <p>Software de Cálculo de Notas - SENA</p>
+    </footer>
+<script type="module" src="js/auth.js"></script>
+
+</body>
+
+</html>
